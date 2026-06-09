@@ -24,6 +24,13 @@
     "emeraldwalk.runonsave": {
         "commands": [
             {
+                "match": ".*test_code\\.py$",
+                "cmd": "export GOOGLE_APPLICATION_CREDENTIALS=/home/user/service_account.json && export GOOGLE_CLOUD_PROJECT=kallogjeri-project-345114 && export GOOGLE_CLOUD_LOCATION=us-central1 && python3 ${workspaceFolder}/scripts/invoke_test_engineer.py && python3 ${workspaceFolder}/test_test_code.py",
+                "runIn": "terminal",
+                "runningStatusMessage": "Invoking Test Engineer Agent for test_code.py...",
+                "finishStatusMessage": "Unit test suite updated and executed."
+            },
+            {
                 "match": ".*\\.prompt(\\.md)?$", // Match any file ending in .prompt or .prompt.md                
                 "cmd": ". ${workspaceFolder}/.scripts/configure.sh && rm -f ${fileBasename}.output.md && . ${workspaceFolder}/.venv/python3.12/bin/activate && .venv/python3.12/bin/python3 ${workspaceFolder}/.scripts/run_gemini_from_file.py ${file}",
                 "runIn": "terminal", // Runs in the integrated terminal
