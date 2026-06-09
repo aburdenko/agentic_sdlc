@@ -8,6 +8,7 @@ DATABASE_PASSWORD = "my_super_secret_password_123!"
 
 def calculate_hash(data):
     # 2. Using obsolete MD5 algorithm (Cryptographic issue)
+    print("hello")
     return hashlib.md5(data.encode()).hexdigest()
 
 def execute_user_command(user_input):
@@ -27,6 +28,10 @@ def read_file_content(filepath):
     except Exception as e:
         # 5. Empty exception block (Silent error swallowing)
         pass
+    
+def test1():
+    return "hello"
+
 
 def main():
     print("Starting test code...")
