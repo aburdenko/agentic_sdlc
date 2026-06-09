@@ -32,6 +32,9 @@ def read_file_content(filepath):
 def test1():
     return "hello"
 
+def test2():
+    return "hello"
+
 
 def main():
     print("Starting test code...")
