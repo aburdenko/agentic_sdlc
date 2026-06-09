@@ -49,12 +49,13 @@ steps:
         python scripts/post_inline_reviews.py
 
 availableSecrets:
-  secretEnv:
-    GITHUB_TOKEN: 'projects/YOUR_PROJECT_ID/secrets/github-token/versions/latest'
+  secretManager:
+    - versionName: 'projects/kallogjeri-project-345114/secrets/github-token/versions/latest'
+      env: 'GITHUB_TOKEN'
 
 substitutions:
   _BASE_BRANCH: 'main'
-  _REPO_OWNER: 'your-github-username-or-org'
-  _REPO_NAME: 'your-repo-name'
+  _REPO_OWNER: 'aburdenko'
+  _REPO_NAME: 'agentic_sdlc'
   _PR_NUMBER: '1' # Provided dynamically by Cloud Build trigger metadata
   COMMIT_SHA: 'head_sha' # Provided dynamically by Cloud Build trigger metadata
