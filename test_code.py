@@ -4,7 +4,7 @@ import hashlib
 from math import *
 
 # 1. Hardcoded sensitive key (Security risk)
-GITHUB_API_TOKEN = "ghp_1234567890abcdefghijklmnopqrstuvwxyz"
+DATABASE_PASSWORD = "my_super_secret_password_123!"
 
 def calculate_hash(data):
     # 2. Using obsolete MD5 algorithm (Cryptographic issue)
