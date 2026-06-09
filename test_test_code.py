@@ -4,26 +4,23 @@ import sys
 import hashlib
 from unittest.mock import patch, mock_open
 
-# --- Start of copied source code for self-contained testing ---
-# In a real project, you would import these functions from their module:
-# from your_module_name import calculate_hash, execute_user_command, query_database, read_file_content, test1, test2
+# --- Start of the provided source code (for direct inclusion in test file for self-containment) ---
+# In a real project, these functions would typically be in a separate module (e.g., 'app.py')
+# and imported as 'from app import calculate_hash, ...'
+# For this exercise, we include them directly to make the test script self-contained and runnable.
 
-# 1. Hardcoded sensitive key (Security risk) - Not directly testable for behavior
 DATABASE_PASSWORD = "my_super_secret_password_123!"
 
 def calculate_hash(data):
-    # 2. Using obsolete MD5 algorithm (Cryptographic issue)
-    # print("hello") # Side effect, not part of core logic to test
+    print("hello") # This print statement is an implementation detail.
     return hashlib.md5(data.encode()).hexdigest()
 
 def execute_user_command(user_input):
-    # 3. Unsafe eval statement (Arbitrary code execution risk)
     return eval(user_input)
 
 def query_database(user_id):
-    # 4. SQL Injection vulnerability (Security risk)
     query = f"SELECT * FROM users WHERE id = '{user_id}'"
-    # print(f"Executing query: {query}") # Side effect
+    print(f"Executing query: {query}") # This print statement is an implementation detail.
     return query
 
 def read_file_content(filepath):
@@ -40,148 +37,176 @@ def test1():
 def test2():
     return "hello"
 
-# The main() function and __name__ == "__main__" block are typically not
-# unit tested as they handle program execution flow and side effects.
-# --- End of copied source code ---
+# The `main` function is an application entry point and typically orchestrates other functions.
+# Unit testing it directly often involves extensive mocking of its dependencies (like print, calculate_hash).
+# Per the persona's guidelines, we focus on testing the core logic functions at the lowest level.
+# Therefore, `main` is not included in this unit test suite.
+# --- End of the provided source code ---
 
 
-class TestVulnerableCode(unittest.TestCase):
+class TestVulnerableApp(unittest.TestCase):
 
-    def test_calculate_hash_happy_path(self):
-        """
-        Verifies calculate_hash returns the correct MD5 hash for a standard string.
-        """
+    # --- Tests for calculate_hash ---
+    def test_calculate_hash_happy_path_string(self):
+        """Verifies calculate_hash returns correct MD5 hash for a standard string."""
         data = "test-data"
         expected_hash = hashlib.md5(data.encode()).hexdigest()
         self.assertEqual(calculate_hash(data), expected_hash)
 
     def test_calculate_hash_empty_string(self):
-        """
-        Verifies calculate_hash handles an empty string correctly.
-        """
+        """Verifies calculate_hash returns correct MD5 hash for an empty string."""
         data = ""
         expected_hash = hashlib.md5(data.encode()).hexdigest()
         self.assertEqual(calculate_hash(data), expected_hash)
 
-    def test_calculate_hash_special_characters(self):
-        """
-        Verifies calculate_hash handles strings with special characters.
-        """
-        data = "!@#$%^&*()_+"
-        expected_hash = hashlib.md5(data.encode()).hexdigest()
-        self.assertEqual(calculate_hash(data), expected_hash)
+    def test_calculate_hash_non_string_input_raises_attribute_error(self):
+        """Verifies calculate_hash raises AttributeError for non-string input due to .encode()."""
+        with self.assertRaises(AttributeError):
+            calculate_hash(123)
+        with self.assertRaises(AttributeError):
+            calculate_hash(None)
+        with self.assertRaises(AttributeError):
+            calculate_hash(['list', 'of', 'strings'])
 
-    def test_execute_user_command_happy_path_simple_expression(self):
-        """
-        Verifies execute_user_command evaluates simple, valid Python expressions.
-        """
+    # --- Tests for execute_user_command ---
+    def test_execute_user_command_arithmetic_expression(self):
+        """Verifies execute_user_command correctly evaluates simple arithmetic expressions."""
         self.assertEqual(execute_user_command("1 + 1"), 2)
-        self.assertEqual(execute_user_command("'hello' + ' world'"), "hello world")
-        self.assertEqual(execute_user_command("len([1, 2, 3])"), 3)
+        self.assertEqual(execute_user_command("10 * 2 - 5"), 15)
+        self.assertEqual(execute_user_command("2 ** 3"), 8)
 
-    def test_execute_user_command_invalid_syntax(self):
-        """
-        Verifies execute_user_command raises a SyntaxError for invalid Python syntax.
-        """
+    def test_execute_user_command_string_operation(self):
+        """Verifies execute_user_command correctly evaluates string methods."""
+        self.assertEqual(execute_user_command("'hello'.upper()"), "HELLO")
+        self.assertEqual(execute_user_command("' Python '.strip()"), "Python")
+
+    def test_execute_user_command_invalid_syntax_raises_syntax_error(self):
+        """Verifies execute_user_command raises SyntaxError for invalid Python syntax."""
         with self.assertRaises(SyntaxError):
             execute_user_command("1 +")
+        with self.assertRaises(SyntaxError):
+            execute_user_command("def func(): pass") # eval doesn't allow statements
+
+    def test_execute_user_command_undefined_name_raises_name_error(self):
+        """Verifies execute_user_command raises NameError for undefined variables."""
         with self.assertRaises(NameError):
             execute_user_command("undefined_variable")
-        with self.assertRaises(TypeError):
-            execute_user_command("len(123)") # len() expects a sequence, not an int
 
-    @patch('os.system')
-    def test_execute_user_command_demonstrates_arbitrary_code_execution(self, mock_os_system):
+    def test_execute_user_command_arbitrary_code_execution_demonstration(self):
         """
-        Demonstrates the arbitrary code execution vulnerability of execute_user_command
-        by attempting to call os.system.
+        Demonstrates the arbitrary code execution vulnerability of execute_user_command.
+        Mocks os.system to prevent actual system calls during testing.
         """
-        # This test confirms that the eval statement *would* execute arbitrary code.
-        # We mock os.system to prevent actual system calls during the test run.
-        command_to_execute = "os.system('echo Test Command Executed')"
-        result = execute_user_command(command_to_execute)
+        with patch('os.system') as mock_os_system:
+            execute_user_command("os.system('echo pwned')")
+            mock_os_system.assert_called_once_with('echo pwned')
         
-        # eval returns the result of the last expression. os.system typically returns 0 on success.
-        self.assertEqual(result, 0)
-        mock_os_system.assert_called_once_with('echo Test Command Executed')
+        # Another example: accessing built-ins
+        self.assertEqual(execute_user_command("len('abc')"), 3)
+        self.assertEqual(execute_user_command("max(1, 5, 2)"), 5)
 
-    def test_query_database_happy_path(self):
-        """
-        Verifies query_database constructs a correct SQL query for a valid user ID.
-        """
-        user_id = "123"
+    # --- Tests for query_database ---
+    def test_query_database_happy_path_integer_id(self):
+        """Verifies query_database generates correct SQL for an integer user ID."""
+        user_id = 123
         expected_query = "SELECT * FROM users WHERE id = '123'"
         self.assertEqual(query_database(user_id), expected_query)
 
-    def test_query_database_sql_injection_attempt(self):
-        """
-        Demonstrates the SQL Injection vulnerability by showing the constructed query
-        with a malicious user ID.
-        """
-        user_id = "1' OR 1=1 --"
-        expected_query = "SELECT * FROM users WHERE id = '1' OR 1=1 --'"
+    def test_query_database_happy_path_string_id(self):
+        """Verifies query_database generates correct SQL for a string user ID."""
+        user_id = "john_doe"
+        expected_query = "SELECT * FROM users WHERE id = 'john_doe'"
         self.assertEqual(query_database(user_id), expected_query)
 
-    def test_query_database_empty_user_id(self):
+    def test_query_database_sql_injection_vulnerability_demonstration(self):
         """
-        Verifies query_database handles an empty user ID in the query string.
+        Demonstrates the SQL Injection vulnerability in query_database.
+        Verifies that malicious input alters the query structure.
         """
+        malicious_id = "1' OR '1'='1"
+        expected_query = "SELECT * FROM users WHERE id = '1' OR '1'='1'"
+        self.assertEqual(query_database(malicious_id), expected_query)
+
+        malicious_id_with_comment = "1'; DROP TABLE users; --"
+        expected_query_with_comment = "SELECT * FROM users WHERE id = '1'; DROP TABLE users; --'"
+        self.assertEqual(query_database(malicious_id_with_comment), expected_query_with_comment)
+        
+        # This test confirms the *construction* of the vulnerable query string,
+        # not its execution against a database.
+
+    def test_query_database_empty_id(self):
+        """Verifies query_database handles an empty user ID correctly."""
         user_id = ""
         expected_query = "SELECT * FROM users WHERE id = ''"
         self.assertEqual(query_database(user_id), expected_query)
 
-    @patch('builtins.open', new_callable=mock_open)
-    def test_read_file_content_happy_path(self, mock_file):
-        """
-        Verifies read_file_content reads content from an existing file.
-        """
-        mock_file.return_value.read.return_value = "This is some file content."
-        self.assertEqual(read_file_content("path/to/file.txt"), "This is some file content.")
-        mock_file.assert_called_once_with("path/to/file.txt", 'r')
+    def test_query_database_none_id(self):
+        """Verifies query_database handles a None user ID (converts to 'None' string)."""
+        user_id = None
+        expected_query = "SELECT * FROM users WHERE id = 'None'"
+        self.assertEqual(query_database(user_id), expected_query)
 
-    @patch('builtins.open', new_callable=mock_open)
-    def test_read_file_content_empty_file(self, mock_file):
-        """
-        Verifies read_file_content returns an empty string for an empty file.
-        """
-        mock_file.return_value.read.return_value = ""
-        self.assertEqual(read_file_content("path/to/empty.txt"), "")
-        mock_file.assert_called_once_with("path/to/empty.txt", 'r')
+    # --- Tests for read_file_content ---
+    def test_read_file_content_happy_path_existing_file(self):
+        """Verifies read_file_content reads content from an existing file."""
+        mock_file_content = "This is some file content."
+        with patch('builtins.open', mock_open(read_data=mock_file_content)) as mock_file:
+            content = read_file_content("test_file.txt")
+            self.assertEqual(content, mock_file_content)
+            mock_file.assert_called_once_with("test_file.txt", 'r')
 
-    @patch('builtins.open', new_callable=mock_open)
-    def test_read_file_content_non_existent_file(self, mock_file):
-        """
-        Verifies read_file_content returns None when the file does not exist,
-        due to the silent exception swallowing.
-        """
-        mock_file.side_effect = FileNotFoundError
-        self.assertIsNone(read_file_content("path/to/nonexistent.txt"))
-        mock_file.assert_called_once_with("path/to/nonexistent.txt", 'r')
+    def test_read_file_content_empty_file(self):
+        """Verifies read_file_content returns an empty string for an empty file."""
+        mock_file_content = ""
+        with patch('builtins.open', mock_open(read_data=mock_file_content)) as mock_file:
+            content = read_file_content("empty_file.txt")
+            self.assertEqual(content, mock_file_content)
+            mock_file.assert_called_once_with("empty_file.txt", 'r')
 
-    @patch('builtins.open', new_callable=mock_open)
-    def test_read_file_content_permission_denied(self, mock_file):
+    def test_read_file_content_non_existent_file_returns_none(self):
         """
-        Verifies read_file_content returns None on permission errors,
-        due to the silent exception swallowing.
+        Verifies read_file_content returns None for a non-existent file,
+        due to silent exception swallowing.
         """
-        mock_file.side_effect = PermissionError
-        self.assertIsNone(read_file_content("path/to/protected.txt"))
-        mock_file.assert_called_once_with("path/to/protected.txt", 'r')
+        with patch('builtins.open', side_effect=FileNotFoundError):
+            content = read_file_content("non_existent_file.txt")
+            self.assertIsNone(content)
 
-    def test_test1_returns_hello(self):
+    def test_read_file_content_permission_denied_returns_none(self):
         """
-        Verifies the test1 function returns the expected string.
+        Verifies read_file_content returns None for a file with permission issues,
+        due to silent exception swallowing.
         """
+        with patch('builtins.open', side_effect=PermissionError):
+            content = read_file_content("restricted_file.txt")
+            self.assertIsNone(content)
+
+    def test_read_file_content_none_filepath_returns_none(self):
+        """
+        Verifies read_file_content returns None when filepath is None,
+        due to silent exception swallowing (TypeError from open()).
+        """
+        content = read_file_content(None)
+        self.assertIsNone(content)
+
+    def test_read_file_content_empty_filepath_returns_none(self):
+        """
+        Verifies read_file_content returns None when filepath is an empty string,
+        due to silent exception swallowing (FileNotFoundError from open('')).
+        """
+        with patch('builtins.open', side_effect=FileNotFoundError):
+            content = read_file_content("")
+            self.assertIsNone(content)
+
+    # --- Tests for test1 and test2 ---
+    def test_test1_function_returns_hello(self):
+        """Verifies test1 function returns the string 'hello'."""
         self.assertEqual(test1(), "hello")
 
-    def test_test2_returns_hello(self):
-        """
-        Verifies the test2 function returns the expected string.
-        """
+    def test_test2_function_returns_hello(self):
+        """Verifies test2 function returns the string 'hello'."""
         self.assertEqual(test2(), "hello")
 
+
 if __name__ == '__main__':
-    # This allows running the tests directly from the command line
-    # `argv=['first-arg-is-ignored']` is a common workaround for unittest.main
-    # when running from environments that might pass extra arguments.
     unittest.main(argv=['first-arg-is-ignored'], exit=False)
