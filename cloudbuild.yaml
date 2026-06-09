@@ -35,7 +35,7 @@ steps:
         export REPO_OWNER=$_REPO_OWNER
         export REPO_NAME=$_REPO_NAME
         export PR_NUMBER=$_PR_NUMBER
-        export COMMIT_SHA=$COMMIT_SHA
+        export COMMIT_SHA=$REVISION_ID
         python scripts/post_inline_reviews.py
 
 options:

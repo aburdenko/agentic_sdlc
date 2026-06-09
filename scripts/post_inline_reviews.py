@@ -9,7 +9,7 @@ def main():
     repo_owner = os.environ.get("REPO_OWNER")
     repo_name = os.environ.get("REPO_NAME")
     pr_number = os.environ.get("PR_NUMBER")
-    commit_sha = os.environ.get("COMMIT_SHA")
+    commit_sha = os.environ.get("COMMIT_SHA") or os.environ.get("REVISION_ID")
     
     if not commit_sha or len(commit_sha) != 40 or not all(c in "0123456789abcdefABCDEF" for c in commit_sha):
         print(f"Warning: COMMIT_SHA environment variable '{commit_sha}' is not a valid 40-character commit SHA. Attempting to get it via git rev-parse HEAD...")
