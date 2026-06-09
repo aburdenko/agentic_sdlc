@@ -11,6 +11,15 @@ def main():
     pr_number = os.environ.get("PR_NUMBER")
     commit_sha = os.environ.get("COMMIT_SHA")
     
+    if not commit_sha or len(commit_sha) != 40 or not all(c in "0123456789abcdefABCDEF" for c in commit_sha):
+        print(f"Warning: COMMIT_SHA environment variable '{commit_sha}' is not a valid 40-character commit SHA. Attempting to get it via git rev-parse HEAD...")
+        try:
+            import subprocess
+            commit_sha = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode("utf-8").strip()
+            print(f"Successfully retrieved commit SHA from git: {commit_sha}")
+        except Exception as e:
+            print(f"Error: Could not retrieve commit SHA from git: {e}")
+    
     if not all([token, repo_owner, repo_name, pr_number, commit_sha]):
         print("Error: Missing required environment variables (GITHUB_TOKEN, REPO_OWNER, REPO_NAME, PR_NUMBER, COMMIT_SHA).")
         sys.exit(1)

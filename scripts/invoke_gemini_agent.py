@@ -54,7 +54,18 @@ Diff Content:
 
     print("=== Sending request to Gemini (gemini-2.5-flash) ===")
     try:
-        client = genai.Client()
+        # Detect if we should use Vertex AI (default to True inside GCP)
+        use_vertex = os.environ.get("USE_VERTEXAI", "true").lower() in ("true", "1", "yes")
+        
+        if use_vertex:
+            project_id = os.environ.get("GOOGLE_CLOUD_PROJECT") or os.environ.get("GCP_PROJECT") or "kallogjeri-project-345114"
+            location = os.environ.get("GOOGLE_CLOUD_LOCATION") or "us-central1"
+            print(f"Initializing genai.Client with Vertex AI (project={project_id}, location={location})...")
+            client = genai.Client(vertexai=True, project=project_id, location=location)
+        else:
+            print("Initializing genai.Client with Developer API...")
+            client = genai.Client()
+
         response = client.models.generate_content(
             model='gemini-2.5-flash',
             contents=prompt_text,
