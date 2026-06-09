@@ -10,32 +10,15 @@ steps:
         git diff origin/$_BASE_BRANCH..HEAD > pr_diff.txt
         echo "=== PR Git Diff Generated ==="
 
-  # Step 2: Invoke the Cloud Run Managed Agent with the Diff Payload
-  # Using the selected 'gemini-3.5-flash' model instructions
-  - name: 'gcr.io/cloud-builders/curl'
+  # Step 2: Invoke the Gemini Agent with the Diff Payload
+  - name: 'python:3.11-slim'
     id: 'invoke-agent'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        # Generate identity token to authenticate secure Cloud Run call via IAM
-        ID_TOKEN=$(gcloud auth print-identity-token)
-        
-        # Call the private Cloud Run endpoint using standard IAM-based service identity.
-        # We instruct the model (gemini-3.5-flash) to output standard structured JSON array containing file, line, and message.
-        curl -s -X POST \
-          -H "Authorization: Bearer $$ID_TOKEN" \
-          -H "Content-Type: application/json" \
-          -d "{
-            \"newMessage\": {
-              \"parts\": [{
-                \"text\": \"Please review this pull request diff and find issues. You must output your response ONLY as a raw JSON list. No markdown backticks, no explanations outside JSON. Use format: [{\\\"path\\\": \\\"file_path\\\", \\\"line\\\": 42, \\\"message\\\": \\\"your comment\\\"}].\n\nDiff Content:\n$(cat pr_diff.txt | sed 's/\"/\\\\\"/g' | sed ':a;N;\$!ba;s/\n/\\\\n/g')\"
-              }]
-            }
-          }" \
-          https://code-reviewer-agent-xxxxxx.a.run.app/invoke > agent_report.json
-        
-        echo "=== Agent Review Invocation Complete ==="
+        pip install google-genai --quiet
+        python scripts/invoke_gemini_agent.py
 
   # Step 3: Run Python Script to Post Inline Review Comments on GitHub PR
   - name: 'python:3.11-slim'
@@ -46,7 +29,14 @@ steps:
       - '-c'
       - |
         pip install requests --quiet
+        export REPO_OWNER=$_REPO_OWNER
+        export REPO_NAME=$_REPO_NAME
+        export PR_NUMBER=$_PR_NUMBER
+        export COMMIT_SHA=$COMMIT_SHA
         python scripts/post_inline_reviews.py
+
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 availableSecrets:
   secretManager:
@@ -59,3 +49,4 @@ substitutions:
   _REPO_NAME: 'agentic_sdlc'
   _PR_NUMBER: '1' # Provided dynamically by Cloud Build trigger metadata
   COMMIT_SHA: 'head_sha' # Provided dynamically by Cloud Build trigger metadata
+
