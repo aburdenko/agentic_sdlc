@@ -38,6 +38,16 @@ steps:
         export COMMIT_SHA=$REVISION_ID
         python scripts/post_inline_reviews.py
 
+  # Step 4: Execute the Python Unit Test Suite
+  - name: 'python:3.11-slim'
+    id: 'run-unit-tests'
+    entrypoint: 'bash'
+    args:
+      - '-c'
+      - |
+        echo "=== Running Generated Python Unit Test Suite ==="
+        python test_test_code.py
+
 options:
   logging: CLOUD_LOGGING_ONLY
 
