@@ -35,6 +35,11 @@ def test1():
 def test2():
     return "hello"
 
+def test3():
+    return "hello"
+
+
+
 
 def main():
     print("Starting test code...")
